@@ -144,3 +144,11 @@ func Test_option_MustGet(t *testing.T) {
 		assert.Equal(t, 1, i)
 	})
 }
+
+func Test_option_OrElse(t *testing.T) {
+	got := Of(1).OrElse(2)
+	assert.Equal(t, 1, got)
+
+	got = OfNil[int]().OrElse(2)
+	assert.Equal(t, 2, got)
+}
