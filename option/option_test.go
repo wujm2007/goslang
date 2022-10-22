@@ -43,6 +43,12 @@ func TestOf(t *testing.T) {
 	assert.Equal(t, false, ok)
 	assert.Nil(t, got)
 
+	intVal := 1
+	got, ok = OfNillable(&intVal).Get()
+	assert.Equal(t, true, ok)
+	assert.NotNil(t, got)
+	assert.Equal(t, intVal, *got)
+
 	var nilS *s
 	gotS, ok = OfNillable(nilS).Get()
 	assert.Equal(t, false, ok)
