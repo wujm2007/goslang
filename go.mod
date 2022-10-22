@@ -1,4 +1,4 @@
-module goslang
+module github.com/wujm2007/goslang
 
 go 1.18
 
