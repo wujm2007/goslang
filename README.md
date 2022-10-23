@@ -25,7 +25,7 @@ func main() {
 	option.Map(o1, int2str) // Option[string] with value="1"
 	
 	badMapper := func(t int) (*string, error) { return nil, errors.New("boom") }
-	o2 := option.MapErrorFunc(o1, badMapper) // Option[string] with nil value & boom error
+	o2 := option.MapE(o1, badMapper) // Option[string] with nil value & boom error
 	o2.Get() // returns (*int)(nil), false
 	o2.Error() // returns error="boom"
 	
@@ -39,9 +39,9 @@ func main() {
 	_ = option.OfNillable(&intVal) // Option[int] with value=1
 	
 	getter := func() (*int, error) { return new(int), nil }
-	_ = option.OfErrorFunc(getter) // Option[int] with value=0
+	_ = option.OfFuncE(getter) // Option[int] with value=0
 	
 	badGetter := func() (*int, error) { return nil, errors.New("boom") }
-	_ = option.OfErrorFunc(badGetter) // Option[int] with nil value & boom error
+	_ = option.OfFuncE(badGetter) // Option[int] with nil value & boom error
 }
 ```

@@ -22,7 +22,21 @@ func TestOf(t *testing.T) {
 	assert.Equal(t, false, ok)
 	assert.Nil(t, got)
 
-	got, ok = OfErrorFunc(getE).Get()
+	assert.Panics(t, func() {
+		got, ok = OfE[int](new(int), errors.New("foo")).Get()
+	})
+
+	assert.Panics(t, func() {
+		got, ok = OfE[int](nil, nil).Get()
+	})
+
+	assert.NotPanics(t, func() {
+		got, ok = OfE[int](nil, errors.New("foo")).Get()
+		assert.Equal(t, false, ok)
+		assert.Nil(t, got)
+	})
+
+	got, ok = OfFuncE(getE).Get()
 	assert.Equal(t, false, ok)
 	assert.Nil(t, got)
 
@@ -84,7 +98,7 @@ func TestOf(t *testing.T) {
 	assert.NotNil(t, got)
 	assert.Equal(t, map[string]int{"foo": 2}, *gotMap)
 
-	got, ok = OfErrorFunc(get).Get()
+	got, ok = OfFuncE(get).Get()
 	assert.Equal(t, true, ok)
 	assert.NotNil(t, got)
 	assert.Equal(t, 0, *got)
@@ -103,16 +117,16 @@ func TestMap(t *testing.T) {
 	assert.NotNil(t, m)
 	assert.Equal(t, "123", *m)
 
-	m, ok = MapErrorFunc(Of(123), mapperE).Get()
+	m, ok = MapE(Of(123), mapperE).Get()
 	assert.Equal(t, false, ok)
 	assert.Nil(t, m)
 
-	err := MapErrorFunc(Of(123), mapperE).Error()
-	assert.NotNil(t, err)
+	err := MapE(Of(123), mapperE).Error()
+	assert.Error(t, err)
 	assert.Equal(t, "bar", err.Error())
 
-	err = MapErrorFunc(OfNil[int](), mapperE).Error()
-	assert.Nil(t, m)
+	err = MapE(OfNil[int](), mapperE).Error()
+	assert.NoError(t, err)
 }
 
 func Test_option_Get(t *testing.T) {
@@ -151,4 +165,38 @@ func Test_option_OrElse(t *testing.T) {
 
 	got = OfNil[int]().OrElse(2)
 	assert.Equal(t, 2, got)
+}
+
+func TestBinaryOp(t *testing.T) {
+	binaryOp := func(v1, v2 int) string {
+		return fmt.Sprintf("%d", v1+v2)
+	}
+	binaryOpE := func(v1, v2 int) (*string, error) {
+		return nil, errors.New("foo")
+	}
+	o1, o2 := Of(1), Of(2)
+	got, ok := BinaryOp(o1, o2, binaryOp).Get()
+	assert.Equal(t, true, ok)
+	assert.NotNil(t, got)
+	assert.Equal(t, "3", *got)
+
+	o1, o2 = Of(1), Of(2)
+	o3 := BinaryOpE(o1, o2, binaryOpE)
+	got, ok = o3.Get()
+	assert.Equal(t, false, ok)
+	assert.Nil(t, got)
+	assert.Error(t, o3.Error())
+
+	o1, o2 = Of(1), OfNil[int]()
+	got, ok = BinaryOp(o1, o2, binaryOp).Get()
+	assert.Equal(t, false, ok)
+	assert.Nil(t, got)
+
+	o1, o2 = OfNil[int](), Of(2)
+	got, ok = BinaryOpE(o1, o2, func(v1, v2 int) (*string, error) {
+		s := fmt.Sprintf("%d", v1+v2)
+		return &s, nil
+	}).Get()
+	assert.Equal(t, false, ok)
+	assert.Nil(t, got)
 }

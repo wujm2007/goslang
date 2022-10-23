@@ -41,9 +41,15 @@ func (o option[T]) OrElse(elseV T) T {
 	return *o.val
 }
 
-func OfErrorFunc[T any](f func() (v *T, err error)) Option[T] {
-	v, err := f()
+func OfE[T any](v *T, err error) Option[T] {
+	if (v != nil) != (err == nil) {
+		panic("either val==nil or error!=nil")
+	}
 	return &option[T]{val: v, err: err}
+}
+
+func OfFuncE[T any](f func() (v *T, err error)) Option[T] {
+	return OfE(f())
 }
 
 func Of[T any](v T) Option[T] {
@@ -65,9 +71,23 @@ func Map[O Option[T], T, R any](o O, mapper func(T) R) Option[R] {
 	return Of[R](mapper(o.MustGet()))
 }
 
-func MapErrorFunc[O Option[T], T, R any](o O, mapper func(T) (*R, error)) Option[R] {
+func MapE[O Option[T], T, R any](o O, mapper func(T) (*R, error)) Option[R] {
 	if o.IsNil() {
 		return OfNil[R]()
 	}
-	return OfErrorFunc(func() (*R, error) { return mapper(o.MustGet()) })
+	return OfFuncE(func() (*R, error) { return mapper(o.MustGet()) })
+}
+
+func BinaryOp[O Option[T], T, R any](o1, o2 O, op func(v1, v2 T) R) Option[R] {
+	if o1.IsNil() || o2.IsNil() {
+		return OfNil[R]()
+	}
+	return Of(op(o1.MustGet(), o2.MustGet()))
+}
+
+func BinaryOpE[O Option[T], T, R any](o1, o2 O, op func(v1, v2 T) (*R, error)) Option[R] {
+	if o1.IsNil() || o2.IsNil() {
+		return OfNil[R]()
+	}
+	return OfE(op(o1.MustGet(), o2.MustGet()))
 }
